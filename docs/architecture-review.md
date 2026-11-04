@@ -36,7 +36,7 @@ Compose는 기본적으로 준비 완료까지 기다리지 않으므로 시작 
 
 ## 보완한 Jenkins 흐름
 
-협업 브랜치는 feature → dev → main으로 관리한다. main·dev는 PR·1명 승인으로 보호하고 main은 같은 저장소의 dev PR만 허용한다. 아래는 코드·모델의 배포 단계이며, dev 통합 검증과 실제 운영 배포는 구분한다. [GitHub 규칙 적용 안내](infra/github-rules.md)
+협업 브랜치는 feature → dev → main으로 관리한다. main·dev는 PR로 보호하며 작성자를 제외하고 main은 4명 이상, dev는 1명 이상의 승인을 요구한다. main은 같은 저장소의 dev PR만 허용한다. 아래는 코드·모델의 배포 단계이며, dev 통합 검증과 실제 운영 배포는 구분한다. [GitHub 규칙 적용 안내](infra/github-rules.md)
 
 ```text
 PR → 검사·테스트 → 결과 기록
