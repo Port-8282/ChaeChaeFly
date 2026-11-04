@@ -67,7 +67,7 @@ Front·Back 프레임워크, DB 제품, 서버와 포트는 팀에서 확정할 
 
 ## 개발을 시작하려면
 
-1. [협업 규칙](CONTRIBUTING.md)을 읽고 담당 폴더의 `README.md`를 확인합니다.
+1. [팀 GitHub Rules](docs/github-rules.md)를 읽고 담당 폴더의 `README.md`를 확인합니다. 코드·데이터 작성 기준은 [상세 협업 가이드](CONTRIBUTING.md)를 참고합니다.
 2. 함께 연결할 서비스의 API·데이터 형식을 `contracts/`에서 맞추고, 실행 환경을 정합니다.
 3. 서비스 코드와 의존성을 구성한 뒤 Dockerfile·Compose·Jenkins를 연결합니다. Python은 각 프로젝트의 `pyproject.toml`과 실제로 생성한 `uv.lock`을 함께 관리합니다.
 
@@ -79,7 +79,7 @@ Front·Back 프레임워크, DB 제품, 서버와 포트는 팀에서 확정할 
 
 최신 `dev`에서 `feature/영역-작업명` 브랜치를 만들고, 완료한 작업은 `dev`로 PR을 올립니다. 통합 검증을 마친 뒤 같은 저장소의 `dev → main` PR로 반영합니다. 초기 공통 커밋과 `main`·`dev` 준비는 팀 개발을 시작하기 전에 진행합니다.
 
-`main`·`dev`는 직접 push 없이 PR과 작성자 외 1명 이상의 승인을 거칩니다. `main`에 병합하기 전에는 리뷰 대화도 모두 해결합니다. **GitHub 브랜치 보호와 Jenkins 필수 검사는 별도로 설정할 예정입니다.**
+`main`·`dev`는 직접 push 없이 PR로 반영합니다. 작성자를 제외하고 **`main`은 4명 이상, `dev`는 1명 이상**의 승인을 받습니다. `main`에 병합하기 전에는 리뷰 대화도 모두 해결합니다. **GitHub 브랜치 보호와 Jenkins 필수 검사는 별도로 설정할 예정입니다.**
 
 커밋과 PR 제목은 `type: [영역] 작업 내용`으로 작성합니다.
 
@@ -96,5 +96,6 @@ add: [infra] 초기 디렉토리 구조와 협업 템플릿 구성
 | 로컬 환경·실행 설정 | [개발 환경 준비](docs/infra/local-setup.md) · [서버·포트·환경변수](docs/infra/specification.md) |
 | 서비스 연결·배포 | [전체 구성도](docs/infra/architecture.md) · [배포·복구 계획](docs/infra/deployment.md) |
 | API·데이터 형식 | [공통 규격 작성 기준](contracts/README.md) |
-| 협업·리뷰 | [컨벤션](CONTRIBUTING.md) · [PR 양식](.github/pull_request_template.md) · [브랜치 보호 설정](docs/infra/github-rules.md) |
+| 협업·리뷰 | [팀 GitHub Rules](docs/github-rules.md) · [상세 가이드](CONTRIBUTING.md) · [PR 양식](.github/pull_request_template.md) |
+| 저장소 설정 | [브랜치 보호 설정](docs/infra/github-rules.md) |
 | 테스트 | [통합 검증 항목](tests/integration/README.md) |
