@@ -50,9 +50,11 @@ feature/infra-compose
 | `dev → main` | Create a merge commit | 계속 사용하는 브랜치의 이력 보존 |
 | `main → dev` | Create a merge commit | 배포 PR 병합 후 두 브랜치의 기준 동기화 |
 
+Squash merge 시 최종 커밋 제목은 `type: [영역] 작업 내용`으로 맞춥니다. PR 제목은 `[영역] 작업 내용`을 유지합니다.
+
 `main → dev` 동기화 PR도 `dev`의 승인 규칙을 따릅니다. 이 방식을 쓰려면 Merge commit과 Squash를 모두 허용하고, Merge commit과 충돌하는 선형 이력 강제 설정은 켜지 않습니다. 계속 사용하는 브랜치를 반복해서 Squash하면 다음 PR에 이전 커밋이 다시 표시될 수 있습니다. [GitHub 병합 방식 안내](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/about-merge-methods-on-github)
 
-## 커밋과 PR 제목은 같은 형식으로 씁니다
+## 커밋 메시지 작성 기준
 
 **`type: [영역] 작업 내용`**
 
@@ -86,6 +88,14 @@ docs: [docs] GitHub 협업 규칙 정리
 문서만 작성·수정하는 작업은 `docs`를 사용합니다. 기존 타입으로 분류하기 어려운 기타 작업은 `etc`를 사용하고 제목에 구체적인 작업 내용을 적습니다. 여러 타입이 해당하면 변경의 주된 목적을 기준으로 고릅니다.
 
 커밋은 기능이나 수정 목적별로 작게 나눕니다. 관련 코드·테스트·문서는 함께 이해하고 되돌릴 수 있는 단위로 묶어도 됩니다. 파일마다 따로 커밋할 필요는 없습니다.
+
+## PR 제목 작성 기준
+
+PR 제목은 **`[영역] 작업 내용`**으로 씁니다. 타입은 생략하고 PR 전체 변경을 한 줄로 요약합니다. 영역은 영문 소문자로 쓰고 대괄호 뒤는 한 칸 띄웁니다. `수정`, `최종`만 적기보다 바뀐 기능이나 파일을 구체적으로 적습니다.
+
+예를 들어 문서 수정 커밋은 `docs: [docs] GitHub 협업 규칙 정리`, PR 제목은 `[docs] GitHub 협업 규칙 정리`로 작성합니다. 커밋 메시지의 13개 타입은 그대로 사용합니다.
+
+여러 서비스의 변경을 묶는 배포 준비·이력 동기화 PR은 영역을 `repo`로 표시합니다. API 호환을 깨는 변경은 제목에 `호환성 변경`을 표시합니다. 경로별 예시는 [팀 PR 타이틀 규칙](docs/github-rules.md#pr-타이틀-규칙)을 참고하세요.
 
 ## PR에는 변경 이유와 확인한 결과를 적습니다
 
