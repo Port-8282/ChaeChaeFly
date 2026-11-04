@@ -1,0 +1,55 @@
+# Secrets: commit only the documented example files.
+.env
+.env.*
+!.env.example
+!.env.*.example
+secrets/
+*.pem
+*.key
+
+# Local Python environments and generated outputs. Commit uv.lock.
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+
+# Frontend and backend build outputs. Commit dependency lock files.
+node_modules/
+.next/
+dist/
+build/
+target/
+.gradle/
+coverage/
+
+# Runtime data and large/private artifacts stay outside Git.
+data/raw/
+data/processed/
+artifacts/
+build-assets/
+checkpoints/
+mlruns/
+runtime/
+backups/
+jenkins_home/
+*.pkl
+*.pickle
+*.joblib
+*.onnx
+*.pt
+*.pth
+*.h5
+*.safetensors
+*.log
+
+# Developer-specific files.
+.DS_Store
+.idea/
+.vscode/

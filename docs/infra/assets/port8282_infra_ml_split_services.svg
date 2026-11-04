@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1490" viewBox="0 0 1600 1490" role="img" aria-labelledby="title desc"><title id="title">PORT 8282 ML 분리형 전체 인프라</title><desc id="desc">단일 레포와 Docker Compose를 유지한다. 앱 서버 안에는 proxy, front, back, ai, ml, db 여섯 컨테이너가 있다. Back이 이벤트와 상태를 저장하고 비동기 계산 작업을 관리한다. AI는 ML에 하역시간 예측을 요청하고 최적화와 규칙 계산을 수행한다. ML 학습은 별도 작업이며 이 ML 컨테이너는 검증된 모델로 추론만 한다. DB는 state_version, calculation_id, 모델 버전, 선택 당시의 결과와 사유인 선택 스냅샷을 보존하고 named volume에 저장한다. 외부 LLM API는 설명과 보고서에 사용한다. 배포 환경의 상세 제품은 미정인 설계안이다.</desc><defs>
+<marker id="a-blue" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#507a9c"/></marker>
+<marker id="a-green" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#378271"/></marker>
+<marker id="a-purple" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#8362a5"/></marker>
+<marker id="a-orange" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#b77c36"/></marker>
+<marker id="a-gray" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#7c8b98"/></marker>
+<marker id="a-red" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#b16a68"/></marker>
+</defs><style>text{font-family:"Apple SD Gothic Neo","Noto Sans CJK KR",sans-serif;fill:#243b4e;}</style><rect width="1600" height="100%" fill="white"/>
+<text x="60" y="65" font-size="38" font-weight="700" text-anchor="start" style="fill:#243b4e">01  전체 인프라 구조 · ML 분리</text>
+<text x="60" y="110" font-size="24" font-weight="400" text-anchor="start" style="fill:#61798c">단일 레포 유지  ·  Docker Compose  ·  앱 서비스 6개  ·  ML은 예측 전용 서비스</text>
+<rect x="500" y="165" width="460" height="105" rx="14" fill="#f5f7f9" stroke="#c6d1db" stroke-width="1.8"/>
+<text x="730.0" y="203" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">담당자 브라우저</text>
+<text x="730.0" y="237" font-size="22" font-weight="400" text-anchor="middle" style="fill:#607687">대시보드 조회 · 후보 선택 · 사유 입력</text>
+<rect x="60" y="165" width="350" height="105" rx="14" fill="#f5f7f9" stroke="#c6d1db" stroke-width="1.8"/>
+<text x="235.0" y="203" font-size="28" font-weight="700" text-anchor="middle" style="fill:#243b4e">선박·기상 이벤트</text>
+<text x="235.0" y="237" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">외부 API 수집 / Mock JSON</text>
+<rect x="45" y="315" width="1510" height="875" rx="18" fill="#fbfcfe" stroke="#b9cedf" stroke-width="1.8"/>
+<text x="310" y="355" font-size="26" font-weight="700" text-anchor="start" style="fill:#456f90">앱 서버 1대</text>
+<text x="310" y="384" font-size="19" font-weight="400" text-anchor="start" style="fill:#61798c">Docker Compose 구성안</text>
+<text x="1080" y="355" font-size="23" font-weight="400" text-anchor="start" style="fill:#61798c">내부 서비스는 이름으로 통신</text>
+<rect x="500" y="410" width="460" height="105" rx="14" fill="#eef5fb" stroke="#adc7dc" stroke-width="1.8"/>
+<text x="730.0" y="448" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">프록시 · proxy</text>
+<text x="730.0" y="482" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">화면과 API 요청을 알맞은 곳으로 전달</text>
+<path d="M730 270 L730 410" fill="none" stroke="#507a9c" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-blue)" marker-start="url(#a-blue)"/>
+<text x="752" y="390" font-size="20" font-weight="400" text-anchor="start" style="fill:#507a9c">HTTPS</text>
+<path d="M235 270 L235 462 L500 462" fill="none" stroke="#507a9c" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-blue)"/>
+<text x="255" y="440" font-size="22" font-weight="400" text-anchor="start" style="fill:#507a9c">JSON 이벤트</text>
+<rect x="1110" y="410" width="370" height="105" rx="14" fill="#eef5fb" stroke="#adc7dc" stroke-width="1.8"/>
+<text x="1295.0" y="448" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">Front · front</text>
+<text x="1295.0" y="482" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">대시보드 화면 제공</text>
+<path d="M960 462 L1110 462" fill="none" stroke="#507a9c" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-blue)" marker-start="url(#a-blue)"/>
+<text x="1035" y="440" font-size="20" font-weight="600" text-anchor="middle" style="fill:#507a9c">화면 /</text>
+<rect x="500" y="660" width="460" height="140" rx="14" fill="#eef5fb" stroke="#adc7dc" stroke-width="1.8"/>
+<text x="730.0" y="698" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">Backend · back</text>
+<text x="730.0" y="732" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">이벤트 처리 · 비동기 계산 작업 관리</text>
+<text x="730.0" y="761" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">상태/결과 API · DB 저장 · 화면 갱신</text>
+<path d="M730 515 L730 660" fill="none" stroke="#507a9c" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-blue)" marker-start="url(#a-blue)"/>
+<text x="752" y="574" font-size="22" font-weight="400" text-anchor="start" style="fill:#507a9c">/api/* · 실시간 갱신 연결</text>
+<text x="752" y="606" font-size="19" font-weight="400" text-anchor="start" style="fill:#7a8b98">브라우저의 API 요청도 프록시 경유</text>
+<rect x="1110" y="660" width="370" height="140" rx="14" fill="#edf7f2" stroke="#a5cdbb" stroke-width="1.8"/>
+<text x="1295.0" y="698" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">DB · db</text>
+<text x="1295.0" y="732" font-size="20" font-weight="400" text-anchor="middle" style="fill:#607687">선박·부두·계약·계산 결과</text>
+<text x="1295.0" y="761" font-size="20" font-weight="400" text-anchor="middle" style="fill:#607687">상태 버전 · 계산 ID · 모델 버전</text>
+<text x="1295.0" y="790" font-size="20" font-weight="400" text-anchor="middle" style="fill:#607687">선택 스냅샷 · 사유 · 보고서</text>
+<path d="M960 730 L1110 730" fill="none" stroke="#378271" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-green)" marker-start="url(#a-green)"/>
+<text x="1035" y="709" font-size="20" font-weight="600" text-anchor="middle" style="fill:#378271">저장 / 조회</text>
+<rect x="500" y="965" width="460" height="160" rx="14" fill="#f4effa" stroke="#c4afd9" stroke-width="1.8"/>
+<text x="730.0" y="1003" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">AI/Data · ai</text>
+<text x="730.0" y="1037" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">후보 탐색 · 제약검증 · 시뮬레이션</text>
+<text x="730.0" y="1066" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">체선료 계산 · 후보 비교</text>
+<text x="730.0" y="1095" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">LLM 설명·보고서 연동</text>
+<path d="M730 800 L730 965" fill="none" stroke="#507a9c" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-blue)" marker-start="url(#a-blue)"/>
+<text x="752" y="875" font-size="22" font-weight="400" text-anchor="start" style="fill:#507a9c">계산 요청 / 결과 반환</text>
+<rect x="80" y="965" width="340" height="160" rx="14" fill="#fff5e7" stroke="#dec097" stroke-width="1.8"/>
+<text x="250.0" y="1003" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">ML 추론 · ml</text>
+<text x="250.0" y="1037" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">전처리 + 검증된 모델</text>
+<text x="250.0" y="1066" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">하역시간 예측 API</text>
+<text x="250.0" y="1095" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">예측값과 모델 버전 반환</text>
+<path d="M500 1045 L420 1045" fill="none" stroke="#b77c36" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-orange)" marker-start="url(#a-orange)"/>
+<text x="460" y="1020" font-size="20" font-weight="700" text-anchor="middle" style="fill:#b77c36">HTTP</text>
+<text x="80" y="930" font-size="23" font-weight="700" text-anchor="start" style="fill:#b77c36">독립 이미지 · 독립 배포</text>
+<path d="M1110 985 C1110 959 1480 959 1480 985 L1480 1095 C1480 1121 1110 1121 1110 1095 Z" fill="#edf7f2" stroke="#a5cdbb" stroke-width="1.8"/>
+<ellipse cx="1295.0" cy="985" rx="185.0" ry="19" fill="#f7fcf9" stroke="#a5cdbb" stroke-width="1.8"/>
+<text x="1295.0" y="1035" font-size="28" font-weight="700" text-anchor="middle" style="fill:#357361">DB 영속 볼륨</text>
+<text x="1295.0" y="1070" font-size="20" font-weight="400" text-anchor="middle" style="fill:#658779">db_data · 서버의 저장 공간</text>
+<text x="1295.0" y="1097" font-size="20" font-weight="400" text-anchor="middle" style="fill:#658779">컨테이너가 바뀌어도 데이터 보관</text>
+<path d="M1295 800 L1295 966" fill="none" stroke="#378271" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-green)" marker-start="url(#a-green)"/>
+<text x="1315" y="866" font-size="18" font-weight="400" text-anchor="start" style="fill:#378271">DB 저장 경로에 연결</text>
+<text x="80" y="1168" font-size="22" font-weight="600" text-anchor="start" style="fill:#7d765f">학습은 별도 작업 · ML 서비스는 검증된 모델로 예측</text>
+<rect x="500" y="1260" width="460" height="105" rx="14" fill="#f4effa" stroke="#c4afd9" stroke-width="1.8"/>
+<text x="730.0" y="1298" font-size="29" font-weight="700" text-anchor="middle" style="fill:#243b4e">외부 LLM API</text>
+<text x="730.0" y="1332" font-size="21" font-weight="400" text-anchor="middle" style="fill:#607687">추천 이유 설명 · 선택한 결과의 보고서</text>
+<path d="M730 1125 L730 1260" fill="none" stroke="#8362a5" stroke-width="2.8" stroke-linejoin="round" marker-end="url(#a-purple)" marker-start="url(#a-purple)" stroke-dasharray="8 6"/>
+<text x="752" y="1235" font-size="20" font-weight="400" text-anchor="start" style="fill:#8362a5">계산 결과와 별도로 호출</text>
+<text x="80" y="1265" font-size="24" font-weight="700" text-anchor="start" style="fill:#5c7588">비교 기준 유지</text>
+<text x="80" y="1302" font-size="21" font-weight="400" text-anchor="start" style="fill:#6b8090">한 계산에는 같은 모델 버전 사용</text>
+<text x="80" y="1337" font-size="21" font-weight="400" text-anchor="start" style="fill:#6b8090">결과에도 사용한 버전을 기록</text>
+<text x="1110" y="1265" font-size="24" font-weight="700" text-anchor="start" style="fill:#5c7588">저장 공간 ≠ 백업</text>
+<text x="1110" y="1302" font-size="21" font-weight="400" text-anchor="start" style="fill:#6b8090">DB 백업은 별도로 보관</text>
+<text x="1110" y="1337" font-size="21" font-weight="400" text-anchor="start" style="fill:#6b8090">Jenkins는 다음 그림에서 설명</text>
+<line x1="60" y1="1410" x2="1540" y2="1410" stroke="#dce5ed"/>
+<text x="60" y="1444" font-size="20" font-weight="400" text-anchor="start" style="fill:#7b8e9c">설계안 · 앱 접속은 프록시로 통합 · ML API는 내부 통신용 · 클라우드/사양/DB/포트/실시간 방식은 확정 필요</text>
+<text x="60" y="1476" font-size="18" font-weight="400" text-anchor="start" style="fill:#7b8e9c">상태 버전 = state_version · 계산 ID = calculation_id · 선택 스냅샷 = 선택 당시의 일정·비용·사유</text>
+</svg>
