@@ -1,6 +1,6 @@
 # 서비스 구조·Jenkins CI/CD 재검토
 
-> 2026-11-04 · 설계 및 현재 파일에 대한 검토. 실제 서비스 실행·Jenkins 배포·복구 성공 검증은 아직 아니다.
+> 2026-11-05 · 설계 및 현재 파일에 대한 검토. Dockerfile 검증 범위는 [Docker 안내](infra/docker.md)에 따르며 업무 기능·Jenkins 배포·복구 검증은 아직 아니다.
 
 **6개 앱 서비스 구조는 현재 MVP 방향에 맞는다. 연결 구조를 늘리기보다 작업 상태·버전·배포·복구 규칙을 보완해야 한다.**
 
@@ -78,9 +78,10 @@ DB 영속 볼륨은 유지한다. 앱 서버 디스크 장애와 함께 사라�
 
 ## 현재 확인한 범위와 남은 일
 
-- 확인: 기존 설계 문서·구성도·체선료 계산기 패키지 경계. 전체 앱 Dockerfile·Compose·Jenkinsfile은 아직 없다.
-- 이번 산출물: ChaeChaeFly 레포의 디렉토리·협업 템플릿·설계 문서. 앱 코드·실제 파이프라인 구현과 구분한다.
-- 다음에 확정: 서버·CPU·Registry, Front/Back 기술 스택, Python 버전, DB, 포트·API·준비 상태, 실시간 전달 방식, 배포 정책, 모델·백업 보관 위치.
+- 확인: 기존 설계 문서·구성도·체선료 계산기 패키지 경계. Front·Back·AI·ML Dockerfile과 공통·개발용 Compose·프록시·PostgreSQL 17.11 설정을 작성했다. Jenkinsfile과 서버 배포용 Compose는 아직 없다.
+- 산출물: 디렉토리·협업 템플릿·설계 문서, 최소 앱·상태 확인 API와 Dockerfile. 업무 기능·실제 배포 파이프라인 구현과 구분한다.
+- 실행 환경 추가: Vue·npm, Spring Boot·Gradle, Python 3.12.13·uv를 구성했다. 버전·로컬 명령은 [로컬 개발 안내](infra/local-setup.md)를 따른다.
+- 다음에 확정: 서버·CPU·Registry, 운영 배포 포트·업무 API·준비 상태, 실시간 전달 방식, 배포 정책, 모델·백업 보관 위치.
 - 실제 검증: [통합 검증 6개](../tests/integration/README.md)를 환경 구성 이후 실행한다. 현재는 테스트 항목 초안이다.
 
 Python 환경은 서비스별 `pyproject.toml`과 실제 생성한 `uv.lock`으로 고정하고 Docker 빌드에서 설치한다. 로컬 `.venv`를 이미지에 복사하지 않는다. [uv Docker 공식 가이드](https://docs.astral.sh/uv/guides/integration/docker/)

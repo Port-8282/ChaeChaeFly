@@ -53,3 +53,6 @@ jenkins_home/
 .DS_Store
 .idea/
 .vscode/
+
+# Local/Jenkins CI reports and run-specific resource state.
+ci-results/

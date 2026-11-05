@@ -1,25 +1,21 @@
-# Jenkins 구성
+# Jenkins CI
 
-브랜치 전략은 `feature → dev → main`이다. feature PR은 검사, dev 병합은 통합 검증, dev → main PR은 배포 전 검증으로 구분한다. main 반영 후 운영 배포의 자동 실행·승인 정책은 별도 결정한다. main 대상 PR의 출발점이 같은 저장소의 dev인지 검사하는 신뢰한 필수 체크를 연결한다. [상세 보호 규칙](../../docs/infra/github-rules.md)
+**팀 공통 검사 환경입니다. 현재 배포 기능은 없습니다.** 설치와 GitHub 연결은 [Jenkins CI 안내](../../docs/infra/ci.md)를 따릅니다.
 
 ```text
-PR                      → 검사·테스트 → 결과 기록
-신뢰한 코드/모델 출시 요청 → 검사·이미지 빌드·테스트 → Registry
-  → 전체 릴리스 명세 → 서버 공통 배포 잠금
-  → 필요한 DB 변경 → 대상 서비스 갱신
-  → 준비 상태·통합 확인 → 성공 기록
-실패 → 직전 성공 앱 버전 복구 → 다시 확인
+GitHub PR·브랜치 변경
+        ↓
+Controller: 작업 예약·결과 표시 (executor 0)
+        ↓
+Agent: 설정 검사·테스트·이미지 빌드 (executor 1)
+        ↓
+CI 전용 Docker: 임시 실행·기본 응답 확인
+        ↓
+결과 보관·이번 검사 자원 정리
 ```
 
-- Controller는 작업을 관리하고 Agent가 빌드 명령을 실행한다. Controller에서 앱 빌드를 실행하지 않는다.
-- Agent의 Git·빌드 도구·Docker/BuildKit 사용 방식과 서버 CPU 아키텍처를 확정한다.
-- PR 검사 환경에 운영 SSH 키·Registry 쓰기 자격증명을 제공하지 않는다. 신뢰한 출시 작업의 권한과 실행 환경을 분리한다.
-- 앱 서버의 Registry 자격증명은 읽기 전용을 기본으로 한다. SSH 대상의 호스트 키도 확인한다.
-- 코드 배포와 모델 출시가 같은 서버의 배포 잠금을 공유해야 한다. 작업별 동시 실행 제한만으로 서로 다른 두 작업의 충돌이 해결되지는 않는다.
-- 모델 변경도 artifact 위치·해시·평가 결과를 지정한 출시 요청으로 실행한다.
-- 모델 출시의 추론 코드는 승인된 main 버전을 기준으로 하고, 모델 artifact 버전·해시는 별도로 지정한다.
-- Jenkins 설정·플러그인 버전·상태 저장 공간을 관리한다. 상태 볼륨 외에 접근을 제한한 별도 백업·복구 절차가 필요하다.
+Controller·Agent·CI Docker는 앱의 6개 서비스와 별도 Compose로 실행합니다. 호스트 Docker socket이나 앱 DB 볼륨은 Agent에 연결하지 않습니다. DinD는 privileged 권한을 사용하므로 신뢰한 팀 코드만 실행하며, 외부 fork PR 자동 실행은 구성하지 않습니다.
 
-전체 릴리스에는 Git commit, 6개 서비스 이미지 digest, 모델 버전·해시·위치, API·전처리 규격, Compose·프록시 설정 버전, DB migration 버전을 기록한다. 변경하지 않은 서비스의 버전도 포함한다.
+Jenkinsfile과 검사 명령은 준비했지만 GitHub Credentials·Multibranch 연결·필수 상태 검사는 관리자 설정이 필요합니다. 저장소에 파일을 올리는 것만으로 자동 활성화되지는 않습니다. [GitHub 보호 규칙](../../docs/infra/github-rules.md)
 
-실제 Jenkinsfile, 설치 설정, Credentials ID와 배포 실행 정책은 3단계에서 작성한다. 현재 파이프라인은 실행 검증 전이다.
+Jenkins 상태 볼륨은 삭제·재생성 후에도 설정을 보관하는 용도입니다. 별도 백업을 대신하지 않습니다. 운영 배포·모델 출시·Registry·SSH 권한은 이후 CD 단계에서 별도 설계합니다.
