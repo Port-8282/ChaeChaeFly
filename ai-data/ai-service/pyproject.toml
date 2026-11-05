@@ -21,7 +21,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["port8282_ai", "port8282_ai.*", "port8282_demurrage", "port8282_demurrage.*"]
+include = [
+    "port8282_ai", "port8282_ai.*",
+    "port8282_demurrage", "port8282_demurrage.*",
+    "schemas", "schemas.*",
+]
 namespaces = false
 
 [tool.uv]
