@@ -1,0 +1,124 @@
+# Docker Compose 2.32.0 이상. 소스 자동 반영: up --build --watch
+services:
+  front:
+    image: port8282-front:dev
+    build:
+      context: ./front
+      target: development
+    restart: "no"
+    environment:
+      BACKEND_URL: http://back:8080
+    develop:
+      watch:
+        - action: sync
+          path: ./front/src
+          target: /app/src
+          initial_sync: true
+        - action: sync
+          path: ./front/public
+          target: /app/public
+          initial_sync: true
+        - action: sync
+          path: ./front/tests
+          target: /app/tests
+          initial_sync: true
+        - action: sync
+          path: ./front/index.html
+          target: /app/index.html
+          initial_sync: true
+        - action: sync+restart
+          path: ./front/vite.config.js
+          target: /app/vite.config.js
+          initial_sync: true
+        - action: rebuild
+          path: ./front/package.json
+        - action: rebuild
+          path: ./front/package-lock.json
+        - action: rebuild
+          path: ./front/.npmrc
+        - action: rebuild
+          path: ./front/Dockerfile
+
+  back:
+    image: port8282-back:dev
+    build:
+      context: ./back
+      target: development
+    restart: "no"
+    volumes:
+      - gradle_cache:/home/app/.gradle
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./back/src
+          target: /workspace/src
+          initial_sync: true
+        - action: rebuild
+          path: ./back/build.gradle
+        - action: rebuild
+          path: ./back/settings.gradle
+        - action: rebuild
+          path: ./back/gradle.properties
+        - action: rebuild
+          path: ./back/gradle.lockfile
+        - action: rebuild
+          path: ./back/gradle
+        - action: rebuild
+          path: ./back/gradlew
+        - action: rebuild
+          path: ./back/Dockerfile
+
+  ai:
+    image: port8282-ai:dev
+    build:
+      context: ./ai-data/ai-service
+      target: development
+    restart: "no"
+    develop:
+      watch:
+        - action: sync
+          path: ./ai-data/ai-service/src
+          target: /app/src
+          initial_sync: true
+          ignore: ["**/__pycache__", "**/*.pyc", "**/*.egg-info"]
+        - action: sync
+          path: ./ai-data/ai-service/tests
+          target: /app/tests
+          initial_sync: true
+        - action: rebuild
+          path: ./ai-data/ai-service/pyproject.toml
+        - action: rebuild
+          path: ./ai-data/ai-service/uv.lock
+        - action: rebuild
+          path: ./ai-data/ai-service/.python-version
+        - action: rebuild
+          path: ./ai-data/ai-service/Dockerfile
+
+  ml:
+    image: port8282-ml:dev
+    build:
+      context: ./ai-data/ml-service
+      target: development
+    restart: "no"
+    develop:
+      watch:
+        - action: sync
+          path: ./ai-data/ml-service/src
+          target: /app/src
+          initial_sync: true
+          ignore: ["**/__pycache__", "**/*.pyc", "**/*.egg-info"]
+        - action: sync
+          path: ./ai-data/ml-service/tests
+          target: /app/tests
+          initial_sync: true
+        - action: rebuild
+          path: ./ai-data/ml-service/pyproject.toml
+        - action: rebuild
+          path: ./ai-data/ml-service/uv.lock
+        - action: rebuild
+          path: ./ai-data/ml-service/.python-version
+        - action: rebuild
+          path: ./ai-data/ml-service/Dockerfile
+
+volumes:
+  gradle_cache:

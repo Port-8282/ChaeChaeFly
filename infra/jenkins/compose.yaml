@@ -1,0 +1,97 @@
+# CI 전용 구성. 앱 Compose와 함께 합치지 않는다.
+# 실행 시 -p port8282-ci --env-file infra/jenkins/.env를 명시한다.
+name: port8282-ci
+
+services:
+  jenkins:
+    image: port8282-jenkins:2.580.2
+    build:
+      context: .
+      dockerfile: Dockerfile.controller
+    restart: unless-stopped
+    environment:
+      JAVA_OPTS: ${JENKINS_JAVA_OPTS:--Xms256m -Xmx1024m}
+      TZ: Asia/Seoul
+    ports:
+      - "127.0.0.1:${JENKINS_PORT:-8081}:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    networks: [control]
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --show-error http://127.0.0.1:8080/login > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 18
+    stop_grace_period: 30s
+
+  docker:
+    image: docker:29.9.1-dind@sha256:3e5756e2b6dad6a5f1f5deacf0a19f9eaa2581b76ae092b2d4a118162e1d4d4e
+    # DinD requires privileged mode. Run only trusted team builds; this is not
+    # an isolation boundary for hostile code. No host Docker socket is mounted.
+    privileged: true
+    restart: unless-stopped
+    environment:
+      DOCKER_TLS_CERTDIR: /certs
+    command: ["--storage-driver=overlay2"]
+    volumes:
+      - docker_client_certs:/certs/client
+      - docker_data:/var/lib/docker
+    networks: [build]
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'docker --host=tcp://127.0.0.1:2376 --tlsverify --tlscacert=/certs/client/ca.pem --tlscert=/certs/client/cert.pem --tlskey=/certs/client/key.pem info > /dev/null'
+      interval: 5s
+      timeout: 5s
+      start_period: 30s
+      retries: 18
+    stop_grace_period: 30s
+
+  agent:
+    profiles: [agent]
+    image: port8282-jenkins-agent:29.9.1
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    init: true
+    restart: "no"
+    environment:
+      JENKINS_URL: http://jenkins:8080
+      JENKINS_AGENT_NAME: ${JENKINS_AGENT_NAME:-ci-docker}
+      # Empty during initial controller setup; validated only when Agent starts.
+      JENKINS_SECRET: ${JENKINS_AGENT_SECRET:-}
+      JENKINS_WEB_SOCKET: "true"
+      JENKINS_AGENT_WORKDIR: /home/jenkins/agent
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_TLS_VERIFY: "1"
+      DOCKER_CERT_PATH: /certs/client
+      TZ: Asia/Seoul
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        if [ -z "$${JENKINS_SECRET}" ]; then
+          echo "JENKINS_AGENT_SECRET is empty. Register the Agent in Jenkins and update infra/jenkins/.env." >&2
+          exit 1
+        fi
+        exec /usr/local/bin/jenkins-agent
+    volumes:
+      - agent_workspace:/home/jenkins/agent
+      - docker_client_certs:/certs/client:ro
+    networks: [control, build]
+    depends_on:
+      jenkins:
+        condition: service_healthy
+      docker:
+        condition: service_healthy
+    stop_grace_period: 30s
+
+networks:
+  control:
+  build:
+
+volumes:
+  jenkins_home:
+  agent_workspace:
+  docker_client_certs:
+  docker_data:

@@ -1,0 +1,117 @@
+# 공통 실행 구조. 개발 시 compose.dev.yaml을 함께 사용한다.
+name: ${COMPOSE_PROJECT_NAME:-port8282}
+
+services:
+  proxy:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    user: "101:101"
+    entrypoint: ["nginx"]
+    command: ["-g", "daemon off;"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-8282}:8080"
+    volumes:
+      - type: bind
+        source: ./infra/proxy/nginx.conf
+        target: /etc/nginx/nginx.conf
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [web]
+    depends_on:
+      front:
+        condition: service_healthy
+      back:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
+  front:
+    image: port8282-front:local
+    init: true
+    restart: unless-stopped
+    networks: [web]
+
+  back:
+    image: port8282-back:local
+    init: true
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Seoul}
+      SERVER_PORT: "8080"
+      SPRING_PROFILES_ACTIVE: compose
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-port8282}
+      SPRING_DATASOURCE_USERNAME: ${DB_APP_USER:-port8282_app}
+      SPRING_DATASOURCE_PASSWORD: ${DB_APP_PASSWORD:?Copy .env.example to .env and set DB_APP_PASSWORD}
+      AI_BASE_URL: http://ai:8000
+    networks: [web, application, database]
+    depends_on:
+      db:
+        condition: service_healthy
+    stop_grace_period: 30s
+
+  ai:
+    image: port8282-ai:local
+    init: true
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Seoul}
+      ML_BASE_URL: http://ml:8000
+      # 예약된 업무 연결 설정. 현재 /health는 ML·LLM을 호출하지 않는다.
+      LLM_API_BASE_URL: ${LLM_API_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    networks: [application]
+    stop_grace_period: 20s
+
+  ml:
+    image: port8282-ml:local
+    init: true
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Seoul}
+    networks: [application]
+    stop_grace_period: 20s
+
+  db:
+    image: postgres:17.11-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Asia/Seoul}
+      POSTGRES_DB: ${POSTGRES_DB:-port8282}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set POSTGRES_PASSWORD}
+      DB_APP_USER: ${DB_APP_USER:-port8282_app}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Copy .env.example to .env and set DB_APP_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - type: bind
+        source: ./infra/db/init/10-app-user.sh
+        target: /docker-entrypoint-initdb.d/10-app-user.sh
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [database]
+    # 앱 계정 생성 완료 + TCP 인증 + 실제 SELECT 성공을 확인한다.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'PGPASSWORD="$${DB_APP_PASSWORD}" psql -h 127.0.0.1 -U "$${DB_APP_USER}" -d "$${POSTGRES_DB}" -v ON_ERROR_STOP=1 -tAc "SELECT 1" > /dev/null'
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    stop_grace_period: 30s
+
+networks:
+  web:
+  application:
+  database:
+    internal: true
+
+volumes:
+  postgres_data:

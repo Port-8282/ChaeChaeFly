@@ -1,0 +1,7 @@
+# Keep local connection secrets and Jenkins state out of image build contexts.
+.env
+.env.*
+!.env.example
+secrets/
+jenkins_home/
+*.log
