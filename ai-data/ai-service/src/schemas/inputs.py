@@ -175,14 +175,12 @@ class EnvironmentSnapshot(SchemaModel):
     berth_conditions: tuple[BerthEnvironment, ...] = ()
 
 
-# 후보 탐색에 사용할 반복·시간 한도, 반환 개수와 난수 시드를 정의한다.
+# 후보 탐색에 사용할 반복·시간 한도와 난수 시드를 정의한다.
 class SearchOptions(SchemaModel):
     # 최대 탐색 반복 횟수. 기본값은 100회.
     max_iterations: PositiveInt = 100
     # 탐색 제한 시간(초). 기본값은 30초.
     time_limit_seconds: PositiveInt = 30
-    # 반환할 상위 후보 개수. 기본값은 3개.
-    top_k: PositiveInt = 3
     # 탐색 재현에 사용할 0 이상의 정수 시드. Seconds 타입의 정수 제약을 재사용한다.
     random_seed: Seconds = 0
 
