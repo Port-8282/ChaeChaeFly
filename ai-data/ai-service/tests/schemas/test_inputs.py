@@ -33,13 +33,12 @@ def test_search_defaults_and_independent_instances(run_input_payload):
     assert first.search_options.model_dump() == {
         "max_iterations": 100,
         "time_limit_seconds": 30,
-        "top_k": 3,
         "random_seed": 0,
     }
     assert first.search_options is not second.search_options
 
 
-@pytest.mark.parametrize("field", ["max_iterations", "time_limit_seconds", "top_k"])
+@pytest.mark.parametrize("field", ["max_iterations", "time_limit_seconds"])
 @pytest.mark.parametrize("value", [0, -1])
 def test_search_options_reject_nonpositive_limits(field, value):
     with pytest.raises(ValidationError):
