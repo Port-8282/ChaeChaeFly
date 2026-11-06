@@ -18,7 +18,52 @@ src/
 tests/                 # 단위 테스트·계약 규칙 검증
 ```
 
-`port8282_ai` 패키지와 독립 uv 환경, FastAPI·Uvicorn 실행 진입점을 구성했다. 현재 API는 프로세스 상태를 확인하는 `GET /health`만 제공한다. 스케줄링·Agent·계산 기능은 아직 없고 기존 계산기도 아직 이관하지 않았다. 전체 목표 구조는 [디렉토리 설계안](../../docs/directory-guide.md)을 따른다.
+`port8282_ai` 패키지와 독립 uv 환경, FastAPI·Uvicorn 실행 진입점을 구성했다. 현재 API는 프로세스 상태를 확인하는 `GET /health`만 제공한다. Agent 3개를 연결하는 LangGraph와 모의 어댑터가 있으며, 실제 최적화·모델 통신과 기존 계산기 이관은 후속 작업이다. 전체 목표 구조는 [디렉토리 설계안](../../docs/directory-guide.md)을 따른다.
+
+## Agent 실행 그래프
+
+`graph/builder.py`의 `build_graph(scheduling, analysis, report)`에 `run()` 메서드가 있는 Agent를 주입한다. Agent는 전체 State 대신 `RunContext`와 단계별 입력만 받는다. 흐름은 아래 순서로 고정하며 분기는 Python 코드로 결정한다. [LangGraph Graph API](https://docs.langchain.com/oss/python/langgraph/graph-api)를 따른다.
+
+```text
+START → scheduling → ranking → analysis → report → finalize → END
+```
+
+Scheduling·Ranking 실패는 즉시 Finalize로 이동하여 `FAILED`로 종료한다. 가능한 후보가 없으면 분석·보고서를 생략하고 `SUCCEEDED`와 `NO_FEASIBLE_PLAN` 경고를 반환한다. Analysis 실패는 Report를 생략하고, Analysis·Report 실패는 `PARTIAL`로 종료하면서 완료된 계산·분석 결과를 보존한다. `StepError.stage`에서 실패 단계를 확인할 수 있다.
+
+순위는 실행 가능한 후보의 총비용, 총대기시간, 후보 ID 오름차순으로 결정하고 전체를 반환한다. Analysis와 Report에도 전체 순위 목록을 전달한다. `SearchOptions`에는 반환 개수 제한이 없으며 `top_k` 입력은 받지 않는다. 실행 불가능한 후보도 `evaluated_candidates`에는 보존한다. 설명과 보고서는 후보 ID 및 선택적 비용 내역 ID를 근거로 참조하며, Node에서 참조를 검증한다.
+
+```python
+from port8282_ai.agents import AnalysisAgent, ReportAgent, SchedulingAgent
+from port8282_ai.agents.mocks import (
+    mock_analysis_model,
+    mock_evaluation_tool,
+    mock_report_model,
+)
+from port8282_ai.graph import build_graph
+from port8282_ai.orchestrator import Orchestrator
+
+# evaluation_payload: EvaluatedCandidate에 맞는 모의 계산 결과 dict
+graph = build_graph(
+    scheduling=SchedulingAgent([mock_evaluation_tool(evaluation_payload)]),
+    analysis=AnalysisAgent(mock_analysis_model),
+    report=ReportAgent(mock_report_model),
+)
+orchestrator = Orchestrator(graph)
+result = orchestrator.run(run_input_payload)  # RunInput 또는 dict → RunResult
+```
+
+그래프와 Orchestrator는 재사용하며 호출마다 실행 ID와 전체 State를 새로 만든다. 입력 검증 오류는 그래프 진입 전에 `FAILED` 결과로 반환한다. 체크포인터·DB·자동 재시도는 사용하지 않는다. `calls`에는 Scheduling Tool과 각 Node의 실행·검증 기록이 누적된다. Tool 실패는 `SchedulingResult`에 완료 후보·오류·호출 기록을 담아 반환해야 중간 결과를 보존할 수 있다. 제공된 `SchedulingAgent`가 이 방식을 구현한다.
+
+모의 Scheduling Tool은 전달받은 평가 결과를 반환하며 실제 후보 탐색이나 시간·반복 한도를 계산하지 않는다. 실제 탐색 Agent로 교체할 때 `SearchTermination`으로 정상 완료·반복 제한·시간 제한·실패를 구분한다. Analysis·Report 모의 모델도 실제 LLM을 호출하지 않는다.
+
+JSON 파일로 실행하려면 서비스 디렉터리에서 다음을 사용한다.
+
+```bash
+uv run --locked python examples/run_mock_graph.py input.json evaluation.json
+uv run --locked pytest tests/graph
+```
+
+`input.json`은 `RunInput`, `evaluation.json`은 `EvaluatedCandidate` 계약을 따른다. 모의 데이터 예제는 `tests/conftest.py`의 `make_run_input_payload()`와 `make_evaluation_payload()`에서 확인할 수 있다. `tests/graph/test_workflow.py`는 독립 Agent 실행, 전체 그래프, 실패 시 이전 결과 보존, 참조 검증, 실행 상태 분리를 검증한다.
 
 ## 개발 환경
 
@@ -31,7 +76,7 @@ uv run --locked ruff check src tests
 uv run --locked ruff format --check src tests
 ```
 
-실행용 의존성은 FastAPI 0.162.0·Uvicorn 0.54.0이며 정확한 하위 의존성은 `uv.lock`으로 고정한다. `pytest`·`ruff`는 개발 도구다. 라이브러리는 필요할 때 `uv add 패키지명`으로 추가하고 `pyproject.toml`·`uv.lock`을 함께 공유한다. 하위 Python 패키지를 추가할 때는 `__init__.py`도 둔다.
+실행용 의존성은 FastAPI·Uvicorn·LangGraph·Pydantic이며 정확한 버전과 하위 의존성은 `uv.lock`으로 고정한다. `pytest`·`ruff`는 개발 도구다. 라이브러리는 필요할 때 `uv add 패키지명`으로 추가하고 `pyproject.toml`·`uv.lock`을 함께 공유한다. 하위 Python 패키지를 추가할 때는 `__init__.py`도 둔다.
 
 현재 `src/schemas/`에 Pydantic 데이터 계약을 구현하고 `tests/schemas/`에서 검증한다. `schemas`는 설치 패키지에 포함되므로 로컬 uv 환경과 Docker 이미지에서 같은 `from schemas import ...` 구문을 사용한다. 두 환경의 설치·검증 절차는 [로컬 개발 안내](../../docs/infra/local-setup.md)를 참고한다.
 
@@ -101,6 +146,6 @@ docker compose -f compose.yaml -f compose.dev.yaml exec ai uv run --locked ruff 
 docker compose -f compose.yaml -f compose.dev.yaml exec ai uv run --locked pytest
 ```
 
-현재 스키마 테스트를 실행한다. 테스트 수집 오류나 pytest의 exit 5는 통과로 기록하지 않는다. 개발 이미지는 uv·pytest·Ruff와 수정 가능한 소스를 포함하지만, 기본 `docker build`로 만드는 최종 `runtime` 이미지는 계속 실행용 의존성만 포함한다.
+스키마와 그래프 테스트를 실행한다. 테스트 수집 오류나 pytest의 exit 5는 통과로 기록하지 않는다. 개발 이미지는 uv·pytest·Ruff와 수정 가능한 소스를 포함하지만, 기본 `docker build`로 만드는 최종 `runtime` 이미지는 계속 실행용 의존성만 포함한다.
 
 호스트 `.venv`를 컨테이너에 연결하지 않는다. 컨테이너에서 실행하는 `uv run --locked`는 설치된 의존성을 확인하며, 라이브러리를 바꾸려면 Git으로 공유할 `pyproject.toml`·`uv.lock`까지 함께 갱신해야 한다. 모델·업무 기능 준비 완료 검사는 이번 환경 구성 범위에 포함되지 않는다.
